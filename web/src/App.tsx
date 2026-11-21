@@ -10,6 +10,7 @@ import { isDesktop, isMac, isWindows, useDesktop } from "@/core/platform"
 import { loadActions } from "@/core/actions"
 import { currentEditor, keysInEditor } from "@/core/editors"
 import { bareWindow, desktop as desktopApp, hasLights } from "@/core/desktop"
+import { t } from "@/lib/locales"
 import { canKeepOnTop, keepOnTop, onTop } from "@/core/ontop"
 import { otherVaults } from "@/core/desktopapp"
 import { canRenameVault, renameVault } from "@/core/vaultrename"
@@ -156,11 +157,11 @@ function dragSidebar(right: boolean, x: number) {
 }
 const manageVaults = () => (desktopApp ? desktopApp.manageVaults() : openDetail("vaults"))
 const VAULT_MENU = (): MenuItem[] => [
-  ...otherVaults().map((v) => ({ label: `Open ${v.name}`, run: () => { (desktopApp ? desktopApp.openVault(v.path) : webVaults.open(v.path)).catch((e) => notifyError(e, "Couldn't open it")) } })),
-  { label: "Manage vaults", sep: !!otherVaults().length, run: () => { manageVaults() } },
-  ...(canRenameVault() ? [{ label: "Rename vault…", run: renameVault }] : []),
-  ...(desktopApp?.openSandbox ? [{ label: "Open the playground", run: () => { desktopApp!.openSandbox!() } }] : []),
-  ...(phoneApp ? [{ label: "Switch server…", run: () => { phoneApp!.launcher() } }] : []),
+  ...otherVaults().map((v) => ({ label: `${t("app.openVault")} ${v.name}`, run: () => { (desktopApp ? desktopApp.openVault(v.path) : webVaults.open(v.path)).catch((e) => notifyError(e, t("errors.couldNot"))) } })),
+  { label: t("app.manageVaults"), sep: !!otherVaults().length, run: () => { manageVaults() } },
+  ...(canRenameVault() ? [{ label: t("app.renameVault"), run: renameVault }] : []),
+  ...(desktopApp?.openSandbox ? [{ label: t("app.sandbox"), run: () => { desktopApp!.openSandbox!() } }] : []),
+  ...(phoneApp ? [{ label: t("app.switchServer"), run: () => { phoneApp!.launcher() } }] : []),
 ]
 
 function sheet_(...a: Parameters<typeof detail_>): ReturnType<typeof detail_> {
@@ -168,17 +169,17 @@ function sheet_(...a: Parameters<typeof detail_>): ReturnType<typeof detail_> {
 }
 
 const CORE_SHEETS: Record<string, [string, (store: Store, id: string) => React.ReactNode]> = {
-  schemes: ["Colour schemes", () => <SchemeGallery />],
-  fonts: ["Fonts", () => <FontsSheet />],
-  "settings-section/": ["Settings", (store, id) => <SettingsSection store={store} id={id} />],
-  hotkeys: ["Hotkeys", () => <HotkeysSheet />],
-  sidebars: ["Sidebars", () => <SidebarsSheet />],
-  "bundle/": ["Bundle", (_, id) => <BundlePreview id={id} />],
-  "plugin-group/": ["Plugins", (store, id) => <PluginGroupSheet store={store} id={id} />],
-  "plugin-get/": ["Get plugins", (_, id) => <GetPluginSheet id={id} />],
-  "bundle-share/": ["Share", (_, id) => <ShareBundle id={id} />],
-  "bundle-import": ["Import a bundle", () => <ImportBundle />],
-  "bundle-incoming/": ["Import a bundle", (_, id) => <IncomingBundle id={id} />],
+  schemes: [t("settings.appearance"), () => <SchemeGallery />],
+  fonts: [t("settings.fonts"), () => <FontsSheet />],
+  "settings-section/": [t("settings.settings"), (store, id) => <SettingsSection store={store} id={id} />],
+  hotkeys: [t("settings.hotkeys"), () => <HotkeysSheet />],
+  sidebars: [t("nav.customizeSidebars"), () => <SidebarsSheet />],
+  "bundle/": [t("plugins.bundle"), (_, id) => <BundlePreview id={id} />],
+  "plugin-group/": [t("plugins.plugins"), (store, id) => <PluginGroupSheet store={store} id={id} />],
+  "plugin-get/": [t("plugins.getPlugins"), (_, id) => <GetPluginSheet id={id} />],
+  "bundle-share/": [t("plugins.shareBundle"), (_, id) => <ShareBundle id={id} />],
+  "bundle-import": [t("plugins.importBundle"), () => <ImportBundle />],
+  "bundle-incoming/": [t("plugins.importBundle"), (_, id) => <IncomingBundle id={id} />],
 }
 
 function detail_(store: Store, path: string, disabled: string[], tabInfo: (t: Tab | Pane) => TabInfo): { body: React.ReactNode; title: string; wide?: boolean } {
@@ -187,9 +188,9 @@ function detail_(store: Store, path: string, disabled: string[], tabInfo: (t: Ta
     const p = decodeURIComponent(id ?? "")
     return { body: <FileView store={store} path={p} pane={false} />, title: stem(p) }
   }
-  if (kind === "tabs") return { body: <Suspense fallback={<Arriving />}><TabSwitcher store={store} info={tabInfo} /></Suspense>, title: "Tabs" }
+  if (kind === "tabs") return { body: <Suspense fallback={<Arriving />}><TabSwitcher store={store} info={tabInfo} /></Suspense>, title: t("tabs.tabs") }
   if (kind === "vaults") {
-    return { body: <><SheetHead icon={Logo} tint="var(--primary)" kicker="Vaultite" title="Vaults" /><VaultManager backend={webVaults} /></>, title: "Vaults" }
+    return { body: <><SheetHead icon={Logo} tint="var(--primary)" kicker={t("app.name")} title={t("app.vaults")} /><VaultManager backend={webVaults} /></>, title: t("app.vaults") }
   }
   const own = CORE_SHEETS[id ? `${kind}/` : kind]
   if (own) return { body: <Suspense fallback={<Arriving />}>{own[1](store, decodeURIComponent(id ?? ""))}</Suspense>, title: own[0] }
@@ -206,8 +207,8 @@ function detail_(store: Store, path: string, disabled: string[], tabInfo: (t: Ta
   if (file) return { body: <FileView store={store} path={file} pane={false} />, title: stem(file) }
   const title = d ? d.def.title(store, d.args) : ""
   if (d && title) return { body: <Guard what="This sheet" size="tab" reset={path}><Drawn draw={() => d.def.render(store, d.args)} /></Guard>, title, wide: d.def.wide }
-  return { body: <SheetHead icon={ListChecks} tint="var(--muted-foreground)" kicker="Not found" title="Nothing to show here"
-    sub="What this link opens was moved or deleted, or the plugin that shows it is off." />, title: "" }
+  return { body: <SheetHead icon={ListChecks} tint="var(--muted-foreground)" kicker={t("app.notFound")} title={t("app.nothingToShow")}
+    sub={t("app.movedOrDeleted")} />, title: "" }
 }
 
 function useRoute() {
@@ -255,7 +256,7 @@ const tellOffer = (e: OfferEvent) => {
     else if (fx.do === "watch") unwatch = onWorkspaceChange(() => tellOffer({ type: "changed", closed: closedTabs().map((c) => c.id) }))
     else {
       const keys = commandKeys("tab:reopen"), { id } = fx
-      notify(`Closed ${fx.n} tabs${keys ? ` · Reopen with ${keys}` : ""}`, { id: CLOSED_TOAST, action: { label: "Undo", run: () => reopenClosed(id, fileGone) } })
+      notify(t("notify.closedTabs", { n: fx.n }) + (keys ? ` · ${t("nav.reopen")} مع ${keys}` : ""), { id: CLOSED_TOAST, action: { label: t("nav.editorUndo"), run: () => reopenClosed(id, fileGone) } })
     }
   }
 }
@@ -300,8 +301,7 @@ export default function App() {
   useEffect(() => { if (store) { shellDrawn(); whenIdle(() => { preloadEditor(); preloadSoon() }) } }, [!!store])
   useEffect(() => {
     if (!safeMode) return
-    const why = lastStartUnfinished ? "Vault plugins are off: the app didn't finish starting last time" : "Vault plugins are off for now"
-    notify(why, { id: "safe-mode", duration: Infinity, action: { label: "Turn back on", run: turnPluginsBackOn } })
+    notify(t("notify.safeMode"), { id: "safe-mode", duration: Infinity, action: { label: t("settings.turnBackOn"), run: turnPluginsBackOn } })
   }, [])
   useEffect(() => { if (store) whenIdle(loadActions) }, [!!store, disabled, enabled])
   const workspacesOn = useWorkspacesOn()
@@ -365,135 +365,135 @@ export default function App() {
   const tabFile = () => (isDesktop() ? currentFile() : "")
   const besideText = () => { const ed = currentEditor(); return !!ed?.undo && keysInEditor(ed) }
   useCommands(() => [
-    { id: "switcher:open", name: "Open quick switcher", keys: ["Mod+O"], run: () => setPalette((p) => (p === "search" ? null : "search")), fromLink: true, label: "Open a file", icon: FileText },
-    { id: "switcher:new-tab", name: "Open new tab from quick switcher", run: () => setPalette((p) => (p === "launcher" ? null : "launcher")), icon: Plus },
-    { id: "palette:open", name: "Open command palette", keys: ["Mod+P"], run: () => setPalette((p) => (p === "commands" ? null : "commands")), icon: CommandIcon },
-    { id: "icon:search", name: "Search icons", run: () => pickIcon({ title: "Search icons", onPick: (n) => copyText(n).then(() => notify(`Copied ${n}: use it as an icon:`, { id: "copied" }), notifyError) }), icon: Smile },
+    { id: "switcher:open", name: t("nav.switcher"), keys: ["Mod+O"], run: () => setPalette((p) => (p === "search" ? null : "search")), fromLink: true, label: t("nav.switcherLabel"), icon: FileText },
+    { id: "switcher:new-tab", name: t("nav.newTab"), run: () => setPalette((p) => (p === "launcher" ? null : "launcher")), icon: Plus },
+    { id: "palette:open", name: t("nav.palette"), keys: ["Mod+P"], run: () => setPalette((p) => (p === "commands" ? null : "commands")), icon: CommandIcon },
+    { id: "icon:search", name: t("nav.palette"), run: () => pickIcon({ title: t("nav.palette"), onPick: (n) => copyText(n).then(() => notify(t("notify.copied", { n }: { n: string }) + ": " + t("nav.fileNewLabel") + " " + t("file.copyLink") + ":", { id: "copied" }), notifyError) }), icon: Smile },
     // ⌘N, ⌘T, ⌘W are the browser's: only the desktop app can bind them.
-    { id: "file:new", name: "Create new note", keys: desktopApp ? ["Mod+N"] : ["Mod+Alt+N"], run: () => newNote(), fromLink: true, label: "New note", icon: FilePlus },
-    { id: "sidebar:toggle", name: "Show left sidebar", keys: ["Mod+\\"],
+    { id: "file:new", name: t("nav.fileNew"), keys: desktopApp ? ["Mod+N"] : ["Mod+Alt+N"], run: () => newNote(), fromLink: true, label: t("nav.fileNewLabel"), icon: FilePlus },
+    { id: "sidebar:toggle", name: t("nav.sidebarToggle"), keys: ["Mod+\\"],
       run: () => (isDesktop() ? setPrefs({ sidebar: !getPrefs().sidebar }) : openDrawer(drawerOut() === "left" ? null : "left")), icon: PanelLeft,
-      nameWhenOn: "Hide left sidebar", on: () => (isDesktop() ? getPrefs().sidebar : drawerOut() === "left") },
-    { id: "sidebar:toggle-right", name: "Show right sidebar", keys: ["Mod+Shift+\\"],
+      nameWhenOn: t("nav.sidebarToggleOff"), on: () => (isDesktop() ? getPrefs().sidebar : drawerOut() === "left") },
+    { id: "sidebar:toggle-right", name: t("nav.sidebarRight"), keys: ["Mod+Shift+\\"],
       run: () => { if (isDesktop()) document.querySelector<HTMLElement>("[data-sidebar-toggle=right]")?.click(); else openDrawer(drawerOut() === "right" ? null : "right") }, icon: PanelRight,
-      nameWhenOn: "Hide right sidebar", on: () => (isDesktop() ? document.querySelector("[data-sidebar-toggle=right]")?.getAttribute("aria-expanded") === "true" : drawerOut() === "right") },
-    { id: "tab:new", name: "Open new tab", keys: desktopApp ? ["Mod+T"] : undefined, when: isDesktop, run: () => openNewTab(), icon: Plus },
-    { id: "split:right", name: "Split right", keys: ["Mod+D", "Mod+Alt+\\"], desktop: true, run: () => splitPane("right"), icon: Columns2 },
-    { id: "split:down", name: "Split down", keys: ["Mod+Shift+D"], desktop: true, run: () => splitPane("bottom"), icon: Rows2 },
-    { id: "split:left", name: "Split left", desktop: true, run: () => splitPane("left"), icon: Columns2 },
-    { id: "split:up", name: "Split up", desktop: true, run: () => splitPane("top"), icon: Rows2 },
-    { id: "split:fit", name: "Split along the longer side", desktop: true, words: "best fit", run: splitToFit, icon: LayoutPanelLeft },
-    { id: "pane:to-tab", name: "Move pane to new tab", when: () => isDesktop() && severalPanes(), words: "separate split out", run: () => paneToTab(activePane().id), icon: SquareSplitHorizontal },
-    { id: "pane:zoom", name: "Zoom pane", keys: ["Mod+Shift+Enter"], when: () => isDesktop() && canZoom(), run: () => zoomPane(), icon: Maximize2, nameWhenOn: "Unzoom pane", on: isZoomed },
-    { id: "pane:float", name: "Float pane", keys: ["Mod+Alt+Enter"], when: () => isDesktop() && (canFloat() || isFloating()), run: toggleFloat, icon: PictureInPicture2,
-      nameWhenOn: "Dock pane", on: () => isFloating() },
+      nameWhenOn: t("nav.sidebarRightOff"), on: () => (isDesktop() ? document.querySelector("[data-sidebar-toggle=right]")?.getAttribute("aria-expanded") === "true" : drawerOut() === "right") },
+    { id: "tab:new", name: t("nav.tabNew"), keys: desktopApp ? ["Mod+T"] : undefined, when: isDesktop, run: () => openNewTab(), icon: Plus },
+    { id: "split:right", name: t("nav.splitRight"), keys: ["Mod+D", "Mod+Alt+\\"], desktop: true, run: () => splitPane("right"), icon: Columns2 },
+    { id: "split:down", name: t("nav.splitDown"), keys: ["Mod+Shift+D"], desktop: true, run: () => splitPane("bottom"), icon: Rows2 },
+    { id: "split:left", name: t("nav.splitLeft"), desktop: true, run: () => splitPane("left"), icon: Columns2 },
+    { id: "split:up", name: t("nav.splitUp"), desktop: true, run: () => splitPane("top"), icon: Rows2 },
+    { id: "split:fit", name: t("nav.splitFit"), desktop: true, words: t("nav.splitFit"), run: splitToFit, icon: LayoutPanelLeft },
+    { id: "pane:to-tab", name: t("nav.paneToTab"), when: () => isDesktop() && severalPanes(), words: t("nav.paneToTab"), run: () => paneToTab(activePane().id), icon: SquareSplitHorizontal },
+    { id: "pane:zoom", name: t("nav.paneZoom"), keys: ["Mod+Shift+Enter"], when: () => isDesktop() && canZoom(), run: () => zoomPane(), icon: Maximize2, nameWhenOn: t("nav.paneFloat"), on: isZoomed },
+    { id: "pane:float", name: t("nav.paneFloat"), keys: ["Mod+Alt+Enter"], when: () => isDesktop() && (canFloat() || isFloating()), run: toggleFloat, icon: PictureInPicture2,
+      nameWhenOn: t("nav.dockPane"), on: () => isFloating() },
     // Off a Mac Alt+Shift: Alt← is Back, Ctrl+Alt arrows switch the desktop's workspaces, Ctrl+Alt is AltGr on Windows.
-    { id: "split:focus-left", name: "Focus pane to the left", keys: mac("Mod+Ctrl+ArrowLeft", "Alt+Shift+ArrowLeft"), when: () => isDesktop() && canGoSide("left"), run: () => goSide("left"), icon: Focus },
-    { id: "split:focus-right", name: "Focus pane to the right", keys: mac("Mod+Ctrl+ArrowRight", "Alt+Shift+ArrowRight"), when: () => isDesktop() && canGoSide("right"), run: () => goSide("right"), icon: Focus },
-    { id: "split:focus-top", name: "Focus pane above", keys: mac("Mod+Ctrl+ArrowUp", "Alt+Shift+ArrowUp"), when: () => isDesktop() && canGoSide("top"), run: () => goSide("top"), icon: Focus },
-    { id: "split:focus-bottom", name: "Focus pane below", keys: mac("Mod+Ctrl+ArrowDown", "Alt+Shift+ArrowDown"), when: () => isDesktop() && canGoSide("bottom"), run: () => goSide("bottom"), icon: Focus },
-    { id: "pane:focus-next", name: "Focus next pane", keys: mac("Mod+Ctrl+]", "Alt+Shift+]"), when: () => isDesktop() && severalPanes(), run: () => focusByOrder(1), icon: Focus },
-    { id: "pane:focus-previous", name: "Focus previous pane", keys: mac("Mod+Ctrl+[", "Alt+Shift+["), when: () => isDesktop() && severalPanes(), run: () => focusByOrder(-1), icon: Focus },
-    { id: "pane:focus-last", name: "Focus last pane", words: "recent back", when: () => isDesktop() && hasLastPane(), run: focusLastPane, icon: Focus },
-    { id: "pane:move-left", name: "Move pane left", keys: mac("Mod+Ctrl+Shift+ArrowLeft"), when: () => isDesktop() && hasNeighbour("left"), words: "swap", run: () => movePane("left"), icon: MoveLeft },
-    { id: "pane:move-right", name: "Move pane right", keys: mac("Mod+Ctrl+Shift+ArrowRight"), when: () => isDesktop() && hasNeighbour("right"), words: "swap", run: () => movePane("right"), icon: MoveRight },
-    { id: "pane:move-up", name: "Move pane up", keys: mac("Mod+Ctrl+Shift+ArrowUp"), when: () => isDesktop() && hasNeighbour("top"), words: "swap", run: () => movePane("top"), icon: MoveUp },
-    { id: "pane:move-down", name: "Move pane down", keys: mac("Mod+Ctrl+Shift+ArrowDown"), when: () => isDesktop() && hasNeighbour("bottom"), words: "swap", run: () => movePane("bottom"), icon: MoveDown },
-    { id: "pane:resize-left", name: "Resize pane left", keys: mac("Mod+Ctrl+Alt+ArrowLeft"), when: () => isDesktop() && canNudge("left"), words: "divider grow shrink", run: () => nudgePane("left"), icon: MoveHorizontal },
-    { id: "pane:resize-right", name: "Resize pane right", keys: mac("Mod+Ctrl+Alt+ArrowRight"), when: () => isDesktop() && canNudge("right"), words: "divider grow shrink", run: () => nudgePane("right"), icon: MoveHorizontal },
-    { id: "pane:resize-up", name: "Resize pane up", keys: mac("Mod+Ctrl+Alt+ArrowUp"), when: () => isDesktop() && canNudge("top"), words: "divider grow shrink", run: () => nudgePane("top"), icon: MoveVertical },
-    { id: "pane:resize-down", name: "Resize pane down", keys: mac("Mod+Ctrl+Alt+ArrowDown"), when: () => isDesktop() && canNudge("bottom"), words: "divider grow shrink", run: () => nudgePane("bottom"), icon: MoveVertical },
-    { id: "pane:even-out", name: "Even out panes", keys: mac("Mod+Ctrl+=", "Alt+Shift+="), when: () => isDesktop() && severalPanes(), words: "balance equal sizes splits", run: evenOutAll, icon: Columns3 },
+    { id: "split:focus-left", name: t("nav.focusLeft"), keys: mac("Mod+Ctrl+ArrowLeft", "Alt+Shift+ArrowLeft"), when: () => isDesktop() && canGoSide("left"), run: () => goSide("left"), icon: Focus },
+    { id: "split:focus-right", name: t("nav.focusRight"), keys: mac("Mod+Ctrl+ArrowRight", "Alt+Shift+ArrowRight"), when: () => isDesktop() && canGoSide("right"), run: () => goSide("right"), icon: Focus },
+    { id: "split:focus-top", name: t("nav.focusTop"), keys: mac("Mod+Ctrl+ArrowUp", "Alt+Shift+ArrowUp"), when: () => isDesktop() && canGoSide("top"), run: () => goSide("top"), icon: Focus },
+    { id: "split:focus-bottom", name: t("nav.focusBottom"), keys: mac("Mod+Ctrl+ArrowDown", "Alt+Shift+ArrowDown"), when: () => isDesktop() && canGoSide("bottom"), run: () => goSide("bottom"), icon: Focus },
+    { id: "pane:focus-next", name: t("nav.focusNext"), keys: mac("Mod+Ctrl+]", "Alt+Shift+]"), when: () => isDesktop() && severalPanes(), run: () => focusByOrder(1), icon: Focus },
+    { id: "pane:focus-previous", name: t("nav.focusPrevious"), keys: mac("Mod+Ctrl+[", "Alt+Shift+["), when: () => isDesktop() && severalPanes(), run: () => focusByOrder(-1), icon: Focus },
+    { id: "pane:focus-last", name: t("nav.focusLast"), words: t("nav.focusLast"), when: () => isDesktop() && hasLastPane(), run: focusLastPane, icon: Focus },
+    { id: "pane:move-left", name: t("nav.moveLeft"), keys: mac("Mod+Ctrl+Shift+ArrowLeft"), when: () => isDesktop() && hasNeighbour("left"), words: t("nav.moveLeft"), run: () => movePane("left"), icon: MoveLeft },
+    { id: "pane:move-right", name: t("nav.moveRight"), keys: mac("Mod+Ctrl+Shift+ArrowRight"), when: () => isDesktop() && hasNeighbour("right"), words: t("nav.moveRight"), run: () => movePane("right"), icon: MoveRight },
+    { id: "pane:move-up", name: t("nav.moveUp"), keys: mac("Mod+Ctrl+Shift+ArrowUp"), when: () => isDesktop() && hasNeighbour("top"), words: t("nav.moveUp"), run: () => movePane("top"), icon: MoveUp },
+    { id: "pane:move-down", name: t("nav.moveDown"), keys: mac("Mod+Ctrl+Shift+ArrowDown"), when: () => isDesktop() && hasNeighbour("bottom"), words: t("nav.moveDown"), run: () => movePane("bottom"), icon: MoveDown },
+    { id: "pane:resize-left", name: t("nav.resizeLeft"), keys: mac("Mod+Ctrl+Alt+ArrowLeft"), when: () => isDesktop() && canNudge("left"), words: t("nav.resizeLeft"), run: () => nudgePane("left"), icon: MoveHorizontal },
+    { id: "pane:resize-right", name: t("nav.resizeRight"), keys: mac("Mod+Ctrl+Alt+ArrowRight"), when: () => isDesktop() && canNudge("right"), words: t("nav.resizeRight"), run: () => nudgePane("right"), icon: MoveHorizontal },
+    { id: "pane:resize-up", name: t("nav.resizeUp"), keys: mac("Mod+Ctrl+Alt+ArrowUp"), when: () => isDesktop() && canNudge("top"), words: t("nav.resizeUp"), run: () => nudgePane("top"), icon: MoveVertical },
+    { id: "pane:resize-down", name: t("nav.resizeDown"), keys: mac("Mod+Ctrl+Alt+ArrowDown"), when: () => isDesktop() && canNudge("bottom"), words: t("nav.resizeDown"), run: () => nudgePane("bottom"), icon: MoveVertical },
+    { id: "pane:even-out", name: t("nav.evenOut"), keys: mac("Mod+Ctrl+=", "Alt+Shift+="), when: () => isDesktop() && severalPanes(), words: t("nav.evenOut"), run: evenOutAll, icon: Columns3 },
     // Off a Mac, ⌃⌥← switches workspaces (GNOME, Xfce): ⌥← there, as browsers have it.
-    { id: "nav:back", name: "Navigate back", keys: isMac ? ["Mod+Alt+ArrowLeft", "Mod+["] : ["Alt+ArrowLeft"], when: isDesktop, run: () => navigate(-1), icon: ArrowLeft },
-    { id: "nav:forward", name: "Navigate forward", keys: isMac ? ["Mod+Alt+ArrowRight", "Mod+]"] : ["Alt+ArrowRight"], when: isDesktop, run: () => navigate(1), icon: ArrowRight },
-    { id: "tab:close", name: "Close current tab", keys: desktopApp ? ["Mod+W"] : undefined, label: "Close tab", icon: X, run: () => {
+    { id: "nav:back", name: t("nav.back"), keys: isMac ? ["Mod+Alt+ArrowLeft", "Mod+["] : ["Alt+ArrowLeft"], when: isDesktop, run: () => navigate(-1), icon: ArrowLeft },
+    { id: "nav:forward", name: t("nav.forward"), keys: isMac ? ["Mod+Alt+ArrowRight", "Mod+]"] : ["Alt+ArrowRight"], when: isDesktop, run: () => navigate(1), icon: ArrowRight },
+    { id: "tab:close", name: t("nav.closeTab"), keys: desktopApp ? ["Mod+W"] : undefined, label: t("nav.closeTab"), icon: X, run: () => {
       const t = activeTab()
       if (t.pinned) restTab(t.id); else if (canClosePane()) closePane(); else closeTab(t.id)
     } },
-    { id: "tab:close-focused", name: "Close the tab that has the keyboard", keys: isMac ? ["Backspace", "Delete"] : ["Delete"], label: "Close tab", icon: X,
+    { id: "tab:close-focused", name: t("nav.closeTab"), keys: isMac ? ["Backspace", "Delete"] : ["Delete"], label: t("nav.closeTab"), icon: X,
       when: () => !!focusedTabClose(), run: () => {
         const x = focusedTabClose()!, bar = x.closest<HTMLElement>("[data-tab-strip]")
         x.click()
         requestAnimationFrame(() => bar?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus())
       } },
-    { id: "pane:close", name: "Close pane", keys: desktopApp ? undefined : ["Mod+Alt+Shift+W"], when: () => isDesktop() && canClosePane(), run: () => closeWholePane(activePane().id), icon: SquareX },
-    { id: "split:close", name: "Close split", keys: desktopApp ? ["Mod+Alt+Shift+W"] : undefined, words: "whole tab all panes", when: () => isDesktop() && canClosePane(),
+    { id: "pane:close", name: t("nav.closePane"), keys: desktopApp ? undefined : ["Mod+Alt+Shift+W"], when: () => isDesktop() && canClosePane(), run: () => closeWholePane(activePane().id), icon: SquareX },
+    { id: "split:close", name: t("nav.closeSplit"), keys: desktopApp ? ["Mod+Alt+Shift+W"] : undefined, words: t("nav.closeSplit"), when: () => isDesktop() && canClosePane(),
       run: () => { const t = activeTab(); if (t.pinned) restTab(t.id); else closeTab(t.id) }, icon: X },
-    { id: "tab:toggle-pin", name: "Pin tab", when: isDesktop, run: () => togglePinTab(activeTab().id), icon: Pin, nameWhenOn: "Unpin tab", on: () => !!activeTab().pinned },
-    { id: "tab:sidebar", name: "Show tabs in the sidebar", when: () => isDesktop() && !isPopout() && !!tabListPanel(), run: () => showTabsIn(tabsInSidebar() ? "top" : "sidebar"),
-      icon: PanelLeft, nameWhenOn: "Show tabs on top", on: () => tabsInSidebar() },
-    { id: "vault:rename", name: "Rename vault…", when: canRenameVault, words: "nickname", run: renameVault, icon: PencilLine },
-    { id: "tab:rename", name: "Rename tab…", when: () => canRenameTab(activeTab()), run: () => renameTab(), icon: PencilLine },
-    { id: "tab:group", name: "Add current tab to group…", when: isDesktop, run: chooseTabGroup, icon: GroupIcon },
-    { id: "tab:rename-group", name: "Rename tab group…", when: () => isDesktop() && !!activeTab().group, run: renameTabGroup, icon: PencilLine },
-    { id: "tab:ungroup", name: "Remove current tab from group", when: () => isDesktop() && !!activeTab().group, run: () => leaveGroup([activeTab().id]), icon: Ungroup },
-    { id: "tab:move-to-window", name: "Move current tab to new window", when: () => isDesktop() && activePane().to !== "new", run: () => popOut(activeTab().id, true), icon: AppWindow },
-    { id: "tab:move-to-main", name: "Move current tab to main window", when: hasMainWindow, run: () => moveToMain([activeTab().id]), icon: AppWindow },
-    { id: "window:bars", name: "Show window bars", nameWhenOn: "Hide window bars", words: "chrome chromeless frameless title bar tab bar toolbar traffic lights compact",
+    { id: "tab:toggle-pin", name: t("nav.pinTab"), when: isDesktop, run: () => togglePinTab(activeTab().id), icon: Pin, nameWhenOn: t("nav.unpinTab"), on: () => !!activeTab().pinned },
+    { id: "tab:sidebar", name: t("nav.tabsSidebar"), when: () => isDesktop() && !isPopout() && !!tabListPanel(), run: () => showTabsIn(tabsInSidebar() ? "top" : "sidebar"),
+      icon: PanelLeft, nameWhenOn: t("nav.tabsOnTop"), on: () => tabsInSidebar() },
+    { id: "vault:rename", name: t("nav.renameVault"), when: canRenameVault, words: t("nav.renameVault"), run: renameVault, icon: PencilLine },
+    { id: "tab:rename", name: t("nav.renameTab"), when: () => canRenameTab(activeTab()), run: () => renameTab(), icon: PencilLine },
+    { id: "tab:group", name: t("nav.tabGroup"), when: isDesktop, run: chooseTabGroup, icon: GroupIcon },
+    { id: "tab:rename-group", name: t("nav.renameGroup"), when: () => isDesktop() && !!activeTab().group, run: renameTabGroup, icon: PencilLine },
+    { id: "tab:ungroup", name: t("nav.ungroup"), when: () => isDesktop() && !!activeTab().group, run: () => leaveGroup([activeTab().id]), icon: Ungroup },
+    { id: "tab:move-to-window", name: t("nav.moveWindow"), when: () => isDesktop() && activePane().to !== "new", run: () => popOut(activeTab().id, true), icon: AppWindow },
+    { id: "tab:move-to-main", name: t("nav.moveMain"), when: hasMainWindow, run: () => moveToMain([activeTab().id]), icon: AppWindow },
+    { id: "window:bars", name: t("nav.windowBars"), nameWhenOn: t("nav.windowBars"), words: t("nav.windowBars"),
       when: () => isDesktop() && isPopout(), on: () => !barsHidden(), run: () => hideBars(!barsHidden()), icon: PanelTopDashed },
-    { id: "window:on-top", name: "Keep window on top", nameWhenOn: "Stop keeping window on top", words: "always on top float pin pip picture",
+    { id: "window:on-top", name: t("nav.windowOnTop"), nameWhenOn: t("nav.windowOnTop"), words: t("nav.windowOnTop"),
       when: () => isDesktop() && canKeepOnTop, on: onTop, run: () => keepOnTop(!onTop()), icon: Pin },
-    { id: "tab:open-in-window", name: "Open current tab in new window", when: () => isDesktop() && activePane().to !== "new", run: () => popOut(activeTab().id), icon: SquareArrowOutUpRight },
-    ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ id: `tab:goto-${n}`, name: `Go to tab #${n}`, keys: desktopApp ? [`Mod+${n}`] : undefined,
+    { id: "tab:open-in-window", name: t("nav.openWindow"), when: () => isDesktop() && activePane().to !== "new", run: () => popOut(activeTab().id), icon: SquareArrowOutUpRight },
+    ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ id: `tab:goto-${n}`, name: t("nav.goToTab", { n: String(n) }), keys: desktopApp ? [`Mod+${n}`] : undefined,
       when: () => isDesktop() && tabsHere() >= n, run: () => selectTabAt(n), icon: Hash })),
-    { id: "tab:goto-last", name: "Go to last tab", keys: desktopApp ? ["Mod+9"] : undefined, when: isDesktop, run: () => selectTabAt(-1), icon: ArrowRightToLine },
+    { id: "tab:goto-last", name: t("nav.goToLastTab"), keys: desktopApp ? ["Mod+9"] : undefined, when: isDesktop, run: () => selectTabAt(-1), icon: ArrowRightToLine },
     // (⌘⇧T is the browser's too.)
-    { id: "tab:reopen", name: "Reopen closed tab", keys: desktopApp ? ["Mod+Shift+T"] : undefined, when: canReopen, run: () => reopenLatest(fileGone), icon: RotateCcw },
-    { id: "tab:search", name: "Search tabs…", keys: ["Mod+Shift+A"], words: "find switch open recently closed archived", when: isDesktop,
+    { id: "tab:reopen", name: t("nav.reopen"), keys: desktopApp ? ["Mod+Shift+T"] : undefined, when: canReopen, run: () => reopenLatest(fileGone), icon: RotateCcw },
+    { id: "tab:search", name: t("nav.searchTabs"), keys: ["Mod+Shift+A"], words: t("nav.searchTabs"), when: isDesktop,
       run: () => setPalette((p) => (p === "tabs" ? null : "tabs")), icon: Search },
-    { id: "tab:close-others", name: "Close all other tabs", keys: ["Mod+Alt+W"], when: isDesktop, run: () => closeTabs("others", activeTab().id), icon: CopyX },
+    { id: "tab:close-others", name: t("nav.closeOthers"), keys: ["Mod+Alt+W"], when: isDesktop, run: () => closeTabs("others", activeTab().id), icon: CopyX },
     // (⌃⇧PgUp and PgDn are the browser's: the desktop app has them.)
-    { id: "tab:move-left", name: "Move tab left", keys: desktopApp ? ["Ctrl+Shift+PageUp"] : undefined, when: () => isDesktop() && tabsHere() > 1, run: () => moveTabBy(-1), icon: ArrowLeft },
-    { id: "tab:move-right", name: "Move tab right", keys: desktopApp ? ["Ctrl+Shift+PageDown"] : undefined, when: () => isDesktop() && tabsHere() > 1, run: () => moveTabBy(1), icon: ArrowRight },
+    { id: "tab:move-left", name: t("nav.moveTabLeft"), keys: desktopApp ? ["Ctrl+Shift+PageUp"] : undefined, when: () => isDesktop() && tabsHere() > 1, run: () => moveTabBy(-1), icon: ArrowLeft },
+    { id: "tab:move-right", name: t("nav.moveTabRight"), keys: desktopApp ? ["Ctrl+Shift+PageDown"] : undefined, when: () => isDesktop() && tabsHere() > 1, run: () => moveTabBy(1), icon: ArrowRight },
     // (⌃Tab is the browser's: the desktop app has it, the web none by default.)
-    { id: "tab:next", name: "Go to next tab", keys: desktopApp ? ["Ctrl+Tab", ...(isMac ? ["Mod+Shift+]"] : [])] : undefined, when: () => isDesktop() && (tabsHere() > 1 || placesHere() > 1), run: () => cycleTab(1), icon: ChevronRight },
-    { id: "tab:previous", name: "Go to previous tab", keys: desktopApp ? ["Ctrl+Shift+Tab", ...(isMac ? ["Mod+Shift+["] : [])] : undefined, when: () => isDesktop() && (tabsHere() > 1 || placesHere() > 1), run: () => cycleTab(-1), icon: ChevronLeft },
+    { id: "tab:next", name: t("nav.tabNext"), keys: desktopApp ? ["Ctrl+Tab", ...(isMac ? ["Mod+Shift+]"] : [])] : undefined, when: () => isDesktop() && (tabsHere() > 1 || placesHere() > 1), run: () => cycleTab(1), icon: ChevronRight },
+    { id: "tab:previous", name: t("nav.tabPrevious"), keys: desktopApp ? ["Ctrl+Shift+Tab", ...(isMac ? ["Mod+Shift+["] : [])] : undefined, when: () => isDesktop() && (tabsHere() > 1 || placesHere() > 1), run: () => cycleTab(-1), icon: ChevronLeft },
     // (Ctrl+. is IBus' emoji key on Linux: Alt+Enter there too, JetBrains' "show actions".)
-    { id: "file:actions", name: "Show actions for current file", keys: isMac ? ["Mod+."] : ["Mod+.", "Alt+Enter"], when: () => !!actionTarget(), run: () => chooseAction(actionTarget()), icon: Zap },
-    { id: "file:reveal", name: "Reveal current file in file tree", when: () => !!tabFile() && isEnabled("files", getPrefs().disabled),
+    { id: "file:actions", name: t("nav.fileActions"), keys: isMac ? ["Mod+."] : ["Mod+.", "Alt+Enter"], when: () => !!actionTarget(), run: () => chooseAction(actionTarget()), icon: Zap },
+    { id: "file:reveal", name: t("nav.reveal"), when: () => !!tabFile() && isEnabled("files", getPrefs().disabled),
       run: () => revealInTree(tabFile(), { scroll: true, flash: true, open: true }), icon: ListTree },
-    { id: "file:rename", name: "Rename current file", when: () => !!tabFile() && !isProtected(tabFile()), run: () => askRename(tabFile()), icon: PencilLine },
-    { id: "file:delete", name: "Delete current file", when: () => !!tabFile() && !isProtected(tabFile()), run: () => remove(tabFile()), icon: Trash2 },
-    { id: "file:duplicate", name: "Duplicate current file", when: () => !!tabFile() && !isReadOnly(tabFile()), run: () => duplicate(tabFile()), icon: Copy },
-    { id: "file:copy-path", name: "Copy file path", when: () => !!tabFile(), run: () => copyPath(tabFile()), icon: ClipboardCopy },
-    { id: "file:copy-link", name: "Copy link to current file", when: () => !!tabFile(), run: () => copyLink(tabFile()), icon: Link },
+    { id: "file:rename", name: t("nav.renameFile"), when: () => !!tabFile() && !isProtected(tabFile()), run: () => askRename(tabFile()), icon: PencilLine },
+    { id: "file:delete", name: t("nav.deleteFile"), when: () => !!tabFile() && !isProtected(tabFile()), run: () => remove(tabFile()), icon: Trash2 },
+    { id: "file:duplicate", name: t("nav.duplicateFile"), when: () => !!tabFile() && !isReadOnly(tabFile()), run: () => duplicate(tabFile()), icon: Copy },
+    { id: "file:copy-path", name: t("nav.copyPath"), when: () => !!tabFile(), run: () => copyPath(tabFile()), icon: ClipboardCopy },
+    { id: "file:copy-link", name: t("nav.copyLink"), when: () => !!tabFile(), run: () => copyLink(tabFile()), icon: Link },
     // `id` and `name` first, literal: core/appsource.ts lists commands from the source; off a Mac `name` changes here.
-    { id: "file:reveal-finder", name: "Reveal current file in Finder", when: () => !!tabFile() && canReveal(), run: () => revealInFinder(tabFile()), icon: FolderOpen,
-      ...(isMac ? {} : { name: isWindows ? "Show current file in Explorer" : "Show current file in folder" }) },
-    ...APP_PAGES.map((p) => ({ id: `page:${p.id}`, name: `Open ${p.label}`, keys: p.keys, words: p.words, run: () => openAppPage(p), icon: p.icon })),
-    { id: "page:get", name: "Get plugins and layouts", words: "setup store directory install bundles packs", run: () => openSetup("get"), icon: StoreIcon },
-    { id: "layouts:choose", name: "Choose a layout…", words: "bundle setup zen research browser standard", run: () => openSettings("appearance"), icon: LayoutTemplate },
-    { id: "layouts:save", name: "Save layout as new…", words: "bundle setup", run: () => import("@/components/LayoutPicker").then((m) => m.saveAsNew(currentLayout())), icon: CopyPlus },
-    { id: "bundles:import", name: "Import a bundle…", words: "layout pack", run: () => openDetail("bundle-import"), icon: Import },
-    { id: "bundles:restore", name: "Restore previous layout", words: "bundle setup undo", when: () => !!previousSetup(), run: () => restoreSetup().catch((e) => notifyError(e, "Couldn't restore it")), icon: ArchiveRestore },
-    { id: "theme:light", name: "Use light theme", unlisted: true, when: () => getPrefs().theme !== "light", run: () => setPrefs({ theme: "light" }), icon: Sun },
-    { id: "theme:dark", name: "Use dark theme", unlisted: true, when: () => getPrefs().theme !== "dark", run: () => setPrefs({ theme: "dark" }), icon: Moon },
-    { id: "theme:system", name: "Use the system's light or dark theme", unlisted: true, when: () => getPrefs().theme !== "system", run: () => setPrefs({ theme: "system" }), icon: SunMoon },
-    { id: "scheme:gruvbox", name: "Use Gruvbox colours (the default)", unlisted: true, when: () => getPrefs().scheme !== "gruvbox", run: () => setPrefs({ scheme: "gruvbox" }), icon: PaletteIcon },
-    { id: "scheme:default", name: "Use Classic colours", unlisted: true, when: () => getPrefs().scheme !== "default", run: () => setPrefs({ scheme: "default" }), icon: PaletteIcon },
-    { id: "scheme:choose", name: "Colour scheme…", words: "change color colours obsidian themes", run: chooseScheme, icon: PaletteIcon, value: () => schemeName(), place: placeOf({ id: "setting:scheme", section: "appearance" }) },
-    { id: "font:text", name: "Text font…", words: "change typeface notes", run: () => chooseFont("textFont"), icon: Type, ...fontSetting("textFont") },
-    { id: "font:interface", name: "Interface font…", words: "change typeface ui", run: () => chooseFont("interfaceFont"), icon: Type, ...fontSetting("interfaceFont") },
-    { id: "font:mono", name: "Monospace font…", words: "change typeface code terminal", run: () => chooseFont("monoFont"), icon: Type, ...fontSetting("monoFont") },
-    { id: "newtab:page", name: "Choose a page for new tabs…", run: chooseNewTabPage, icon: LayoutDashboard },
-    { id: "newtab:sections", name: "Show sections on new tabs", when: () => !!getPrefs().newTab.page, run: showNewTabSections, icon: Layers },
-    { id: "sidebars:customize", name: "Customize sidebars", run: () => openDetail("sidebars"), icon: SlidersHorizontal },
-    { id: "hotkeys:open", name: "Open hotkeys", keys: ["Shift+/"], run: () => openDetail("hotkeys"), icon: Keyboard },
-    { id: "density:compact", name: "Use compact density", unlisted: true, when: () => getPrefs().density === "comfortable", run: () => setPrefs({ density: "compact" }), icon: FoldVertical },
-    { id: "density:comfortable", name: "Use comfortable density", unlisted: true, when: () => getPrefs().density !== "comfortable", run: () => setPrefs({ density: "comfortable" }), icon: UnfoldVertical },
-    ...(["natural", "snappy", "off"] as const).map((animation) => ({ id: `animation:${animation}`, name: animation === "off" ? "Turn animations off" : `Use ${animation} animations`, unlisted: true, when: () => getPrefs().animation !== animation, run: () => setPrefs({ animation }), icon: Sparkles })),
-    { id: "properties:visible", name: "Show properties in notes", unlisted: true, when: () => editorSettings().propertiesInDocument !== "visible", run: () => showPropertiesAs("visible"), icon: Tags },
-    { id: "properties:hidden", name: "Hide properties in notes", unlisted: true, when: () => editorSettings().propertiesInDocument !== "hidden", run: () => showPropertiesAs("hidden"), icon: EyeOff },
-    { id: "properties:source", name: "Show properties as text while editing", unlisted: true, when: () => editorSettings().propertiesInDocument !== "source", run: () => showPropertiesAs("source"), icon: Braces },
-    { id: "editor:undo", name: "Undo", keys: ["Mod+Z"], when: besideText, run: () => currentEditor()?.undo?.(), icon: Undo2 },
-    { id: "editor:redo", name: "Redo", keys: ["Mod+Shift+Z"], when: besideText, run: () => currentEditor()?.redo?.(), icon: Redo2 },
-    { id: "vault:reload", name: "Reload the vault", run: () => reload(), icon: RefreshCw },
-    { id: "vault:manage", name: "Manage vaults", run: manageVaults, icon: Stone },
-    { id: "vault:sandbox", name: "Open the playground", when: () => !!desktopApp?.openSandbox, run: () => desktopApp?.openSandbox?.(), icon: FlaskConical },
-    { id: "app:setup", name: "Set up Vaultite", when: () => !!desktopApp?.setup, run: () => desktopApp?.setup?.(), icon: CirclePlay },
-    { id: "app:switch-server", name: "Switch server…", when: () => !!phoneApp, run: () => phoneApp?.launcher(), icon: Server },
-    { id: "file:open-outside", name: "Open file from outside the vault…", when: () => !!desktopApp, run: () => desktopApp?.pickOutside(), icon: FileInput },
+    { id: "file:reveal-finder", name: t("nav.revealFinder"), when: () => !!tabFile() && canReveal(), run: () => revealInFinder(tabFile()), icon: FolderOpen,
+      ...(isMac ? {} : { name: isWindows ? t("nav.showExplorer") : t("nav.showFolder") }) },
+    ...APP_PAGES.map((p) => ({ id: `page:${p.id}`, name: t("nav.fileNew") + " " + p.label, keys: p.keys, words: p.words, run: () => openAppPage(p), icon: p.icon })),
+    { id: "page:get", name: t("nav.plugins"), words: t("nav.plugins"), run: () => openSetup("get"), icon: StoreIcon },
+    { id: "layouts:choose", name: t("nav.chooseLayout"), words: t("nav.chooseLayout"), run: () => openSettings("appearance"), icon: LayoutTemplate },
+    { id: "layouts:save", name: t("nav.saveLayout"), words: t("nav.saveLayout"), run: () => import("@/components/LayoutPicker").then((m) => m.saveAsNew(currentLayout())), icon: CopyPlus },
+    { id: "bundles:import", name: t("nav.importBundle"), words: t("nav.importBundle"), run: () => openDetail("bundle-import"), icon: Import },
+    { id: "bundles:restore", name: t("nav.restoreLayout"), words: t("nav.restoreLayout"), when: () => !!previousSetup(), run: () => restoreSetup().catch((e) => notifyError(e, t("errors.couldNot"))), icon: ArchiveRestore },
+    { id: "theme:light", name: t("nav.themeLight"), unlisted: true, when: () => getPrefs().theme !== "light", run: () => setPrefs({ theme: "light" }), icon: Sun },
+    { id: "theme:dark", name: t("nav.themeDark"), unlisted: true, when: () => getPrefs().theme !== "dark", run: () => setPrefs({ theme: "dark" }), icon: Moon },
+    { id: "theme:system", name: t("nav.themeSystem"), unlisted: true, when: () => getPrefs().theme !== "system", run: () => setPrefs({ theme: "system" }), icon: SunMoon },
+    { id: "scheme:gruvbox", name: t("nav.schemeGruvbox"), unlisted: true, when: () => getPrefs().scheme !== "gruvbox", run: () => setPrefs({ scheme: "gruvbox" }), icon: PaletteIcon },
+    { id: "scheme:default", name: t("nav.schemeClassic"), unlisted: true, when: () => getPrefs().scheme !== "default", run: () => setPrefs({ scheme: "default" }), icon: PaletteIcon },
+    { id: "scheme:choose", name: t("nav.schemeChoose"), words: t("nav.schemeChoose"), run: chooseScheme, icon: PaletteIcon, value: () => schemeName(), place: placeOf({ id: "setting:scheme", section: "appearance" }) },
+    { id: "font:text", name: t("nav.fontText"), words: t("nav.fontText"), run: () => chooseFont("textFont"), icon: Type, ...fontSetting("textFont") },
+    { id: "font:interface", name: t("nav.fontInterface"), words: t("nav.fontInterface"), run: () => chooseFont("interfaceFont"), icon: Type, ...fontSetting("interfaceFont") },
+    { id: "font:mono", name: t("nav.fontMono"), words: t("nav.fontMono"), run: () => chooseFont("monoFont"), icon: Type, ...fontSetting("monoFont") },
+    { id: "newtab:page", name: t("nav.newTabPage"), run: chooseNewTabPage, icon: LayoutDashboard },
+    { id: "newtab:sections", name: t("nav.newTabSections"), when: () => !!getPrefs().newTab.page, run: showNewTabSections, icon: Layers },
+    { id: "sidebars:customize", name: t("nav.customizeSidebars"), run: () => openDetail("sidebars"), icon: SlidersHorizontal },
+    { id: "hotkeys:open", name: t("nav.hotkeys"), keys: ["Shift+/"], run: () => openDetail("hotkeys"), icon: Keyboard },
+    { id: "density:compact", name: t("nav.densityCompact"), unlisted: true, when: () => getPrefs().density === "comfortable", run: () => setPrefs({ density: "compact" }), icon: FoldVertical },
+    { id: "density:comfortable", name: t("nav.densityComfortable"), unlisted: true, when: () => getPrefs().density !== "comfortable", run: () => setPrefs({ density: "comfortable" }), icon: UnfoldVertical },
+    ...(["natural", "snappy", "off"] as const).map((animation) => ({ id: `animation:${animation}`, name: animation === "off" ? t("nav.animationOff") : t("nav.animationNatural"), unlisted: true, when: () => getPrefs().animation !== animation, run: () => setPrefs({ animation }), icon: Sparkles })),
+    { id: "properties:visible", name: t("nav.propertiesVisible"), unlisted: true, when: () => editorSettings().propertiesInDocument !== "visible", run: () => showPropertiesAs("visible"), icon: Tags },
+    { id: "properties:hidden", name: t("nav.propertiesHidden"), unlisted: true, when: () => editorSettings().propertiesInDocument !== "hidden", run: () => showPropertiesAs("hidden"), icon: EyeOff },
+    { id: "properties:source", name: t("nav.propertiesSource"), unlisted: true, when: () => editorSettings().propertiesInDocument !== "source", run: () => showPropertiesAs("source"), icon: Braces },
+    { id: "editor:undo", name: t("nav.editorUndo"), keys: ["Mod+Z"], when: besideText, run: () => currentEditor()?.undo?.(), icon: Undo2 },
+    { id: "editor:redo", name: t("nav.editorRedo"), keys: ["Mod+Shift+Z"], when: besideText, run: () => currentEditor()?.redo?.(), icon: Redo2 },
+    { id: "vault:reload", name: t("nav.reload"), run: () => reload(), icon: RefreshCw },
+    { id: "vault:manage", name: t("nav.manageVaults"), run: manageVaults, icon: Stone },
+    { id: "vault:sandbox", name: t("nav.sandbox"), when: () => !!desktopApp?.openSandbox, run: () => desktopApp?.openSandbox?.(), icon: FlaskConical },
+    { id: "app:setup", name: t("nav.setup"), when: () => !!desktopApp?.setup, run: () => desktopApp?.setup?.(), icon: CirclePlay },
+    { id: "app:switch-server", name: t("nav.switchServer"), when: () => !!phoneApp, run: () => phoneApp?.launcher(), icon: Server },
+    { id: "file:open-outside", name: t("nav.openOutside"), when: () => !!desktopApp, run: () => desktopApp?.pickOutside(), icon: FileInput },
   // eslint-disable-next-line react-hooks/exhaustive-deps -- commands read state when run, built once per store
   ], [!!store])
   const pluginsVersion = usePluginsVersion()

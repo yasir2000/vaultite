@@ -14,8 +14,10 @@ import { isMd, prefetchShown, watchOpeningSoon } from "./core/files"
 import { preloadEditor } from "./editor/lazy"
 import { noteAppError, recoverFromStaleBuild, startAppErrors } from "./core/errors"
 import { caughtError, recoveredError } from "./core/roots"
+import { initLang } from "./lib/locales"
 
 document.body.dataset.arriving = ""
+initLang()
 startStore()
 if (prefetchShown().some(isMd)) preloadEditor()
 watchOpeningSoon()

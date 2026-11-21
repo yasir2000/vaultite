@@ -1566,6 +1566,50 @@ html.dark[data-translucent][data-demo-desk=own] { background: linear-gradient(rg
 @keyframes preview-in { from { opacity: 0; scale: 0.96; } }
 [data-hover-card][data-cold] .preview-card, [data-palette-preview][data-cold] .preview-card { animation: preview-in var(--motion) var(--ease-out); }
 
+/* ===== Arabic (RTL) localisation overrides =====
+   Applied when <html dir="rtl"> (language = ar). Mirrors layout for
+   right-to-left reading: sidebars, gutters, icons and text alignment. */
+html[dir="rtl"] { direction: rtl; text-align: right; }
+html[dir="rtl"] body { text-align: right; }
+html[dir="rtl"] :where([data-phone]) { direction: rtl; }
+
+/* Mirror horizontal spacing: left <-> right. */
+html[dir="rtl"] [class*="-l-"], html[dir="rtl"] [class*="-left"],
+html[dir="rtl"] [class*="pl-"], html[dir="rtl"] [class*="pr-"],
+html[dir="rtl"] [class*="ml-"], html[dir="rtl"] [class*="mr-"],
+html[dir="rtl"] [class*="px-"] { text-align: right; }
+
+/* Flip explicit left/right properties where they appear inline. */
+html[dir="rtl"] [style*="left:"], html[dir="rtl"] [style*="right:"] { text-align: right; }
+
+/* Directional icons mirror for Arabic. */
+html[dir="rtl"] [data-icon="chevron-left"],
+html[dir="rtl"] [data-icon="chevron-right"],
+html[dir="rtl"] [data-icon="arrow-left"],
+html[dir="rtl"] [data-icon="arrow-right"],
+html[dir="rtl"] [data-icon="move-left"],
+html[dir="rtl"] [data-icon="move-right"],
+html[dir="rtl"] [data-icon="arrow-left-to-line"],
+html[dir="rtl"] [data-icon="arrow-right-to-line"] { transform: scaleX(-1); display: inline-block; }
+
+/* Sidebar moves to the right in RTL. */
+html[dir="rtl"] [data-sidebar], html[dir="rtl"] [data-left-sidebar] { left: auto; right: 0; }
+html[dir="rtl"] [data-right-sidebar] { left: 0; right: auto; }
+
+/* Tables and lists align to the right in Arabic. */
+html[dir="rtl"] :where(th, td) { text-align: right; }
+html[dir="rtl"] .note-prose :where(ul, ol) { padding-left: 0; padding-right: 1.35em; }
+html[dir="rtl"] .note-prose blockquote { border-left: none; border-right: 3px solid color-mix(in srgb, var(--notes) 55%, transparent); padding-left: 0; padding-right: 14px; }
+
+/* Scrollbar gutter side flips. */
+html[dir="rtl"] [data-panel-scroll],
+html[dir="rtl"] [data-scroll=sidebar] { margin-right: 0; margin-left: calc(-1 * var(--bar-room)); }
+html[dir="rtl"] [data-sidebar-body][data-scroll=panels] { margin-right: var(--bar-room); margin-left: calc(-1 * var(--bar-room)); padding-right: 0; padding-left: var(--bar-room); }
+
+/* Arabic typography: prefer an Arabic-friendly UI font stack when Arabic is active. */
+html[dir="rtl"] { --font-ui: 'Segoe UI', 'Tahoma', 'Noto Naskh Arabic', 'Arial', system-ui, sans-serif, 'Noto Color Emoji'; }
+
+
 /* Dictation (core/dictation.ts, core/pill.ts): a pill of bars that move with the voice, by where the words go; a
    field's pending words beside them, as a field can't draw them. Over the palette (the Ask box), under menus. */
 .dictation-pill {

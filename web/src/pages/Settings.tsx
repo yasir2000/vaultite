@@ -14,6 +14,7 @@ import { setPrefs, usePrefs, type Prefs } from "@/core/prefs"
 import { useSwitches } from "@/core/switches"
 import { PLUGIN_UPDATE_POLICIES } from "@/core/choices"
 import { cn } from "@/lib/utils"
+import { t } from "@/lib/locales"
 import { fewOf } from "@/core/bundlenames"
 import { HotkeysSheet } from "@/pages/Hotkeys"
 import { DenseRows, Group, IconTile, Logo, Panel, Section, Segmented, SettingRow, SheetHead } from "@/components/kit"
@@ -34,35 +35,35 @@ import { policyOf, type UpdatePolicy } from "../../../core/updates.ts"
 const byName = new Intl.Collator(undefined, { sensitivity: "base" })
 
 const UPDATES: Record<UpdateMode, string> = {
-  automatic: "Downloaded, then the app restarts into it while you're away, with nothing unsaved",
-  notify: "Downloaded, then Restart to update when you're ready",
-  off: "Only when you choose Check for updates in the menu",
+  automatic: t("updates.automatic"),
+  notify: t("updates.notify"),
+  off: t("updates.off"),
 }
 
 function UpdatesRow() {
   const [mode, setMode] = useState<UpdateMode | null>(null)
   useEffect(() => { void desktopApp?.updates?.get().then((u) => { if (u.available) setMode(u.mode) }, () => {}) }, [])
   if (!mode) return null
-  const choose = (m: UpdateMode) => { setMode(m); desktopApp!.updates!.set(m).catch((e) => notifyError(e, "Couldn't change it")) }
+  const choose = (m: UpdateMode) => { setMode(m); desktopApp!.updates!.set(m).catch((e) => notifyError(e, t("errors.couldNot"))) }
   return (
-    <SettingRow stack label="Updates" sub={UPDATES[mode]} data-settings-row="updates">
-      <Segmented<UpdateMode> label="Updates" value={mode} onChange={choose} className="w-full shrink-0 sm:w-[260px]"
-        options={[{ value: "automatic", label: "Automatic" }, { value: "notify", label: "Notify" }, { value: "off", label: "Off" }]} />
+    <SettingRow stack label={t("settings.updates")} sub={UPDATES[mode]} data-settings-row="updates">
+      <Segmented<UpdateMode> label={t("settings.updates")} value={mode} onChange={choose} className="w-full shrink-0 sm:w-[260px]"
+        options={[{ value: "automatic", label: t("updates.automaticLabel") }, { value: "notify", label: t("updates.notifyLabel") }, { value: "off", label: t("updates.offLabel") }]} />
     </SettingRow>
   )
 }
 
 const PLUGIN_UPDATES: Record<UpdatePolicy, string> = {
-  vaultite: "Vaultite's update by themselves",
-  all: "Every installed plugin updates by itself",
-  off: "Update each from its page",
+  vaultite: t("updates.vaultite"),
+  all: t("updates.all"),
+  off: t("updates.offChoice"),
 }
 
 function PluginUpdatesRow() {
   const policy = policyOf(usePrefs())
   return (
-    <SettingRow stack label="Plugin updates" sub={PLUGIN_UPDATES[policy]} data-settings-row="plugin-updates">
-      <Segmented<UpdatePolicy> label="Which plugins update on their own" value={policy} onChange={(v) => void setPrefs({ updates: v })} className="w-full shrink-0 sm:w-[260px]"
+    <SettingRow stack label={t("settings.pluginUpdates")} sub={PLUGIN_UPDATES[policy]} data-settings-row="plugin-updates">
+      <Segmented<UpdatePolicy> label={t("updates.whichUpdate")} value={policy} onChange={(v) => void setPrefs({ updates: v })} className="w-full shrink-0 sm:w-[260px]"
         options={PLUGIN_UPDATE_POLICIES} />
     </SettingRow>
   )
@@ -72,10 +73,10 @@ function LoginRow() {
   const [on, setOn] = useState<boolean | null>(null)
   useEffect(() => { void desktopApp?.login?.get().then((r) => setOn(r.on), () => {}) }, [])
   if (on === null) return null
-  const set = (v: boolean) => { setOn(v); desktopApp!.login!.set(v).catch((e) => { setOn(!v); notifyError(e, "Couldn't change it") }) }
+  const set = (v: boolean) => { setOn(v); desktopApp!.login!.set(v).catch((e) => { setOn(!v); notifyError(e, t("errors.couldNot")) }) }
   return (
-    <SettingRow label="Open at login" sub="On this computer" data-settings-row="login">
-      <Switch on={on} onChange={set} label="Open at login" />
+    <SettingRow label={t("settings.openAtLogin")} sub={t("settings.onThisComputer")} data-settings-row="login">
+      <Switch on={on} onChange={set} label={t("settings.openAtLogin")} />
     </SettingRow>
   )
 }
@@ -86,8 +87,8 @@ function Updates() {
       <div className="flex min-h-14 items-center gap-3 py-2" data-settings-row="version">
         <Logo className="size-9 shrink-0" />
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] leading-[20px] font-semibold md:text-[13px] md:leading-[18px]">Vaultite</div>
-          <div className="text-[13px] leading-[18px] text-muted-foreground tabular-nums md:text-[12px] md:leading-[16px]">Version {APP_VERSION}</div>
+          <div className="text-[15px] leading-[20px] font-semibold md:text-[13px] md:leading-[18px]">{t("app.name")}</div>
+          <div className="text-[13px] leading-[18px] text-muted-foreground tabular-nums md:text-[12px] md:leading-[16px]">{t("settings.version")} {APP_VERSION}</div>
         </div>
       </div>
       <UpdatesRow />
@@ -103,16 +104,16 @@ const headed = (id: string, label: string, icon: LucideIcon, tint: string, body:
   ({ id, label, icon, tint, render: (store) => <><SheetHead icon={icon} tint={tint} title={label} sub={sub} />{body(store)}<Members store={store} section={id} /></> })
 const pickSetup = (to: "plugins" | "get") => (settingsSection.get() === to ? undefined : openSetup(to))
 const CORE: Sec[] = [
-  headed("appearance", "Appearance", Palette, "var(--blue)", () => <AppearancePanel />, "Layout, colours, text and motion"),
-  headed("editor", "Editor", PenLine, "var(--orange)", (store) => <EditorPanel store={store} />, "Writing and reading notes"),
-  headed("files", "Files", FolderOpen, "var(--teal)", () => null, "Properties, the file list, file history and where new files go"),
-  { id: "hotkeys", label: "Hotkeys", icon: Keyboard, tint: "var(--gray)", render: () => <HotkeysSheet /> },
-  headed("terminal", "Terminal", SquareTerminal, "var(--gray)", () => null, "Its shell, its cursor and who may open one"),
-  ...(desktopApp?.permission ? [headed("permissions", "Permissions", ShieldCheck, "var(--blue)", () => <PermissionsPanel />, "What macOS lets Vaultite do on this Mac")] : []),
-  headed("about", "About", Info, "var(--gray)", () => <About />, "Version, updates and errors"),
-  headed("ai", "AI", Bot, "var(--purple)", (store) => <AiPanel store={store} />, "Agents and the AI apps you connect"),
-  { id: "plugins", label: "Plugins", icon: Puzzle, tint: "var(--blue)", render: (store) => <PluginsPane store={store} tab="plugins" pick={pickSetup} top={<PluginUpdates />} /> },
-  { id: "get", label: "Get plugins", icon: StoreIcon, tint: "var(--blue)", render: (store) => <PluginsPane store={store} tab="get" pick={pickSetup} /> },
+  headed("appearance", t("settings.appearance"), Palette, "var(--blue)", () => <AppearancePanel />, t("settings.layout")),
+  headed("editor", t("settings.editor"), PenLine, "var(--orange)", (store) => <EditorPanel store={store} />, t("settings.writing")),
+  headed("files", t("settings.files"), FolderOpen, "var(--teal)", () => null, t("settings.filesSub")),
+  { id: "hotkeys", label: t("settings.hotkeys"), icon: Keyboard, tint: "var(--gray)", render: () => <HotkeysSheet /> },
+  headed("terminal", t("settings.terminal"), SquareTerminal, "var(--gray)", () => null, t("settings.terminalSub")),
+  ...(desktopApp?.permission ? [headed("permissions", t("settings.permissions"), ShieldCheck, "var(--blue)", () => <PermissionsPanel />, t("settings.permissionsSub"))] : []),
+  headed("about", t("settings.about"), Info, "var(--gray)", () => <About />, t("settings.aboutSub")),
+  headed("ai", t("settings.ai"), Bot, "var(--purple)", (store) => <AiPanel store={store} />, t("settings.aiSub")),
+  { id: "plugins", label: t("settings.plugins"), icon: Puzzle, tint: "var(--blue)", render: (store) => <PluginsPane store={store} tab="plugins" pick={pickSetup} top={<PluginUpdates />} /> },
+  { id: "get", label: t("settings.getPlugins"), icon: StoreIcon, tint: "var(--blue)", render: (store) => <PluginsPane store={store} tab="get" pick={pickSetup} /> },
 ]
 const AI_GROUP = ["ai"], PLUGINS_GROUP = ["plugins", "get"]
 
@@ -156,15 +157,15 @@ function Advanced({ store, section, list }: { store: Store; section: string; lis
   return (
     <div className="flex flex-col gap-6" data-settings-advanced={open ? "open" : "closed"}>
       <Group>
-        <SettingRow label="Advanced" sub={open ? undefined : fewOf(list.map((p) => p.name))} onClick={() => setAdvanced(section, !open)}
+        <SettingRow label={t("settings.advanced")} sub={open ? undefined : fewOf(list.map((p) => p.name))} onClick={() => setAdvanced(section, !open)}
           chevron={open ? ChevronDown : ChevronRight} aria-expanded={open} data-settings-advanced-row="" />
       </Group>
       {open && drawn.map((p) => <Member key={p.id} store={store} plugin={p} title={p.name} />)}
       {open && !!apart.length && (
-        <Section title="More">
+        <Section title={t("settings.more")}>
           <Group>
             {apart.map((p) => (
-              <SettingRow key={p.id} data-settings-member={p.id} onClick={() => openPlugin(p.id)} sub={`${Object.keys(p.settingsDecls ?? {}).length} settings`}
+              <SettingRow key={p.id} data-settings-member={p.id} onClick={() => openPlugin(p.id)} sub={t("settings.settingsCount", { n: Object.keys(p.settingsDecls ?? {}).length })}
                 label={<span className="flex items-center gap-2"><IconTile icon={p.icon} tint={tileTint(p.id)} className="size-5 rounded-[5px]" iconClassName="size-3" />{p.name}</span>} />
             ))}
           </Group>
@@ -206,8 +207,8 @@ function sectionOf(id: string, disabled: string[]): Sec | null {
 export function SettingsSection({ store, id }: { store: Store; id: string }) {
   const { disabled } = usePrefs()
   const s = sectionOf(id, disabled)
-  if (!s) return <SheetHead icon={SlidersHorizontal} tint="var(--muted-foreground)" title="Not found" />
-  return <Catch fallback={() => <p className="text-[15px] text-muted-foreground">This section couldn't be drawn.</p>}>{s.render(store)}</Catch>
+  if (!s) return <SheetHead icon={SlidersHorizontal} tint="var(--muted-foreground)" title={t("app.notFound")} />
+  return <Catch fallback={() => <p className="text-[15px] text-muted-foreground">{t("settings.sectionMissing")}</p>}>{s.render(store)}</Catch>
 }
 
 function menu(prefs: Prefs): RailItem[] {
